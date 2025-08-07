@@ -26,7 +26,7 @@
         <span class="error-message" id="error-application-date"></span>
 
         <label for="fta-notive-of-submission" style="margin-top: 16px; display: block;">FTA Notice of Submission or FTA acknowledgement 
-          <span title="Drag and drop your file here, or click “Choose File” to upload the FTA Notice of Submission." style="cursor: help; color: #555;">&#9432;</span>
+          <span title="Drag and drop your file here, or click “Choose File” to upload the FTA Notice of Submission or FTA acknowledgement." style="cursor: help; color: #555;">&#9432;</span>
           <span style="color: red;">*</span>
         </label>
         <input type="file" id="fta-notive-of-submission" name="fta-notive-of-submission" accept=".pdf,.jpg,.jpeg,.png" required />
@@ -35,6 +35,19 @@
         <button class="submit-button" type="submit" id="submit_button_id">Submit</button>
 
       </form>
+    </div>
+
+    <!-- Upload overlay/modal -->
+    <div id="upload-buffer" class="upload-overlay hidden" aria-live="polite" role="status">
+    <div class="upload-box">
+        <div class="upload-icon">&#128228;</div>
+        <div class="upload-title" id="upload-title">Uploading your file...</div>
+        <div class="progress-wrapper">
+        <div class="progress-bar-background">
+            <div id="upload-progress" class="progress-bar-fill animate"></div>
+        </div>
+        </div>
+    </div>
     </div>
 
     <div>
