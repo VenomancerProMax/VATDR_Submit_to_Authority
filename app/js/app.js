@@ -12,7 +12,15 @@ ZOHO.embeddedApp.on("PageLoad", async (entity) => {
     });
     const applicationData = appResponse.data[0];
     app_id = applicationData.id;
-    account_id = applicationData.Account_Name.id;
+    
+    // Check for Account ID and handle if missing
+    if (!applicationData.Account_Name || !applicationData.Account_Name.id) {
+        console.error("Application record is missing a linked Account ID. Cannot proceed with data fetch.");
+        // Prevent setting account_id if null/undefined
+        // The submission logic will catch this later, but useful to log now.
+    } else {
+        account_id = applicationData.Account_Name.id;
+    }
 
     const accountResponse = await ZOHO.CRM.API.getRecord({
       Entity: "Accounts",
@@ -127,6 +135,7 @@ async function update_record(event = null) {
     const taxablePerson = document.getElementById("name-of-taxable-person")?.value;
     const taxRegNo = document.getElementById("tax-registration-number")?.value;
     const appDate = document.getElementById("application-date")?.value;
+    const safe_account_id = account_id ? account_id.trim() : "";
 
     if (!referenceNo) {
         showError("reference-number", "Reference Number is required.");
@@ -149,6 +158,12 @@ async function update_record(event = null) {
         hasError = true;
     }
 
+    if (!safe_account_id) {
+      showError("submit_button_id", "Error: Associated Account ID is missing. Cannot proceed.");
+      hasError = true;
+      console.error("FATAL ERROR: Account ID is missing.");
+    }
+
     if (hasError) {
         if (submitBtn) {
         submitBtn.disabled = false;
@@ -170,14 +185,18 @@ async function update_record(event = null) {
             },
         });
 
-        await ZOHO.CRM.API.updateRecord({
-            Entity: "Accounts",
-            APIData: {
-                id: account_id,
-                Legal_Name_of_Taxable_Person: taxablePerson,
-                TRN_Number: taxRegNo,
-            },
-        });
+        // Pass ALL required data to the Deluge function via JSON string
+        const func_name = "ta_vatdr_submit_to_auth_update_account";
+        const req_data = {
+            "arguments": JSON.stringify({
+                "account_id": safe_account_id,
+                "legal_name_of_taxable_person": taxablePerson,
+                "trn_number": taxRegNo
+            })
+        };
+
+        const accountResponse = await ZOHO.CRM.FUNCTIONS.execute(func_name, req_data);
+        console.log("Account Update Function Response:", accountResponse);
 
         await uploadFileToCRM();
         await ZOHO.CRM.BLUEPRINT.proceed();
