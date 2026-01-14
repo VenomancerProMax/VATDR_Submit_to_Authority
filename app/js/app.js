@@ -37,17 +37,29 @@ function showError(id, msg) {
 
 async function handleFile(file) {
     if(!file) return;
-    if(file.size > 10 * 1024 * 1024) {
-        showError("fta-notive-of-submission", "File size must not exceed 10MB.");
+    clearErrors();
+
+    if(file.size > 20 * 1024 * 1024) {
+        showError("fta-notive-of-submission", "File size must not exceed 20MB.");
         return;
     }
-    document.getElementById("file-label-text").textContent = "File: " + file.name;
-    const reader = new FileReader();
-    reader.onload = () => {
+
+    try {
+        // Re-implemented using the Perfect Code logic (ArrayBuffer)
+        const content = await new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = reject;
+            reader.readAsArrayBuffer(file);
+        });
+
         cachedFile = file;
-        cachedBase64 = reader.result.split(",")[1];
-    };
-    reader.readAsDataURL(file);
+        cachedBase64 = content;
+        document.getElementById("file-label-text").textContent = "File: " + file.name;
+    } catch (err) {
+        console.error("Error reading file:", err);
+        showError("fta-notive-of-submission", "Failed to read file.");
+    }
 }
 
 dropZone.onclick = () => fileInput.click();
@@ -91,7 +103,7 @@ document.getElementById("record-form").onsubmit = async (e) => {
     const trn = document.getElementById("tax-registration-number").value.trim();
     const date = document.getElementById("application-date").value;
 
-    if(!ref || !name || !trn || !date || !cachedFile) {
+    if(!ref || !name || !trn || !date || !cachedFile || !cachedBase64) {
         if(!ref) showError("reference-number", "Required");
         if(!name) showError("name-of-taxable-person", "Required");
         if(!trn) showError("tax-registration-number", "Required");
@@ -122,10 +134,14 @@ document.getElementById("record-form").onsubmit = async (e) => {
             arguments: JSON.stringify({ account_id, legal_name_of_taxable_person: name, trn_number: trn })
         });
 
+        // Re-implemented Attachment
         await ZOHO.CRM.API.attachFile({
             Entity: "Applications1",
             RecordID: app_id,
-            File: { Name: cachedFile.name, Content: cachedBase64 }
+            File: { 
+                Name: cachedFile.name, 
+                Content: cachedBase64 
+            }
         });
 
         document.getElementById("upload-buffer").classList.add("hidden");
