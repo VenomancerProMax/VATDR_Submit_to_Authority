@@ -1,29 +1,48 @@
 let app_id, account_id, cachedFile, cachedBase64;
+let toastTimeout;
 const dropZone = document.getElementById("drop-zone");
 const fileInput = document.getElementById("fta-notive-of-submission");
 
-function showModal(type, title, message) {
-    const modal = document.getElementById("custom-modal");
-    document.getElementById("modal-title").textContent = title;
-    document.getElementById("modal-message").textContent = message;
-    document.getElementById("modal-icon-success").classList.toggle("hidden", type !== "success");
-    document.getElementById("modal-icon-error").classList.toggle("hidden", type !== "error");
-    
-    const btn = document.getElementById("modal-close");
-    btn.onclick = (type === "success") ? async () => {
-        btn.disabled = true;
-        btn.textContent = "Finalizing...";
-        try {
-            await ZOHO.CRM.BLUEPRINT.proceed();
-            setTimeout(() => {
-                top.location.href = top.location.href;
-            }, 1000);
-        } catch (e) {
-            ZOHO.CRM.UI.Popup.closeReload();
-        }
-    } : () => { modal.classList.add("hidden"); };
-    
-    modal.classList.remove("hidden");
+function showToast(type, title, message, duration = 4000) {
+    const toast = document.getElementById("toast");
+    const iconSuccess = document.getElementById("toast-icon-success");
+    const iconError = document.getElementById("toast-icon-error");
+    const progressBar = document.getElementById("toast-progress-bar");
+
+    document.getElementById("toast-title").textContent = title;
+    document.getElementById("toast-message").textContent = message;
+
+    toast.classList.remove("toast-success", "toast-error", "toast-show", "toast-hide", "hidden");
+    iconSuccess.classList.toggle("hidden", type !== "success");
+    iconError.classList.toggle("hidden", type !== "error");
+    toast.classList.add(type === "success" ? "toast-success" : "toast-error");
+
+    // restart slide-in animation
+    void toast.offsetWidth;
+    toast.classList.add("toast-show");
+
+    // restart progress bar animation
+    progressBar.style.animation = "none";
+    void progressBar.offsetWidth;
+    progressBar.style.animation = `toastProgress ${duration}ms linear forwards`;
+
+    clearTimeout(toastTimeout);
+    toastTimeout = setTimeout(() => {
+        toast.classList.remove("toast-show");
+        toast.classList.add("toast-hide");
+        setTimeout(() => toast.classList.add("hidden"), 300);
+    }, duration);
+}
+
+async function finalizeSuccess() {
+    try {
+        await ZOHO.CRM.BLUEPRINT.proceed();
+        setTimeout(() => {
+            top.location.href = top.location.href;
+        }, 1000);
+    } catch (e) {
+        ZOHO.CRM.UI.Popup.closeReload();
+    }
 }
 
 function clearErrors() {
@@ -145,12 +164,13 @@ document.getElementById("record-form").onsubmit = async (e) => {
         });
 
         document.getElementById("upload-buffer").classList.add("hidden");
-        showModal("success", "Success!", "Application processed. Click Ok to reload.");
+        showToast("success", "Success!", "Application processed successfully.");
+        setTimeout(() => { finalizeSuccess(); }, 2500);
     } catch (err) {
         btn.disabled = false;
         btn.textContent = "Submit";
         document.getElementById("upload-buffer").classList.add("hidden");
-        showModal("error", "Failed", "Check connection and try again.");
+        showToast("error", "Failed", "Check connection and try again.");
     }
 };
 

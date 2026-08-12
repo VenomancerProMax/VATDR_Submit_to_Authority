@@ -48,13 +48,16 @@
         </div>
     </div>
 
-    <div id="custom-modal" class="hidden">
-        <div class="modal-content">
-            <div id="modal-icon-success" class="hidden" style="font-size: 40px;">✅</div>
-            <div id="modal-icon-error" class="hidden" style="font-size: 40px;">❌</div>
-            <h3 id="modal-title" style="margin: 10px 0;"></h3>
-            <p id="modal-message" style="font-size: 14px; color: #666; margin-bottom: 20px;"></p>
-            <button id="modal-close" class="submit-button" style="margin-top: 0;">OK</button>
+    <!-- Toast notification (replaces the old blocking modal) -->
+    <div id="toast" class="hidden">
+        <div id="toast-icon-success" class="hidden toast-icon">✅</div>
+        <div id="toast-icon-error" class="hidden toast-icon">❌</div>
+        <div class="toast-content">
+            <p id="toast-title"></p>
+            <p id="toast-message"></p>
+        </div>
+        <div class="toast-progress-track">
+            <div id="toast-progress-bar"></div>
         </div>
     </div>
 
